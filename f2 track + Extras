@@ -1,0 +1,93 @@
+local playerList = {}
+local isTracking = false
+local trackedPlayer = nil
+
+-- Function to populate the player list
+function PopulatePlayerList()
+    playerList = {}
+    for _, player in ipairs(GetActivePlayers()) do
+        local playerServerId = GetPlayerServerId(player)
+        local playerName = GetPlayerName(player)
+        table.insert(playerList, { id = playerServerId, name = playerName })
+    end
+end
+
+-- Function to draw the track menu
+function DrawTrackMenu()
+    if not isTracking then
+        return
+    end
+
+    -- Draw menu background
+    DrawRect(0.5, 0.5, 0.3, 0.5, 0, 0, 0, 200)
+
+    -- Draw menu title
+    SetTextFont(0)
+    SetTextProportional(1)
+    SetTextScale(0.0, 0.35)
+    SetTextColour(255, 255, 255, 255)
+    SetTextDropShadow(0, 0, 0, 0, 255)
+    SetTextEdge(2, 0, 0, 0, 150)
+    SetTextDropShadow()
+    SetTextOutline()
+    SetTextEntry("STRING")
+    AddTextComponentString("Track Menu")
+    DrawText(0.4, 0.2)
+
+    -- Draw player names in the menu
+    local yPos = 0.3
+    for index, playerData in ipairs(playerList) do
+        SetTextFont(0)
+        SetTextProportional(1)
+        SetTextScale(0.0, 0.35)
+        SetTextColour(255, 255, 255, 255)
+        SetTextDropShadow(0, 0, 0, 0, 255)
+        SetTextEdge(2, 0, 0, 0, 150)
+        SetTextDropShadow()
+        SetTextOutline()
+        SetTextEntry("STRING")
+        AddTextComponentString(playerData.name)
+        DrawText(0.4, yPos)
+        yPos = yPos + 0.1
+
+        -- Highlight the currently tracked player
+        if playerData.id == trackedPlayer then
+            DrawRect(0.5, yPos - 0.03, 0.29, 0.05, 0, 0, 0, 200)
+        end
+    end
+end
+
+-- Function to track a selected player
+function TrackPlayer(playerId)
+    trackedPlayer = playerId
+    -- Implement your logic to track the player, such as showing their location on the map
+    -- You can use the 'playerId' to identify the player to track
+    -- Example: TriggerEvent("mytrackingevent", playerId)
+end
+
+-- Event handler for the F2 key press
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(0)
+        if IsControlJustPressed(0, 288) then -- F2 key
+            isTracking = not isTracking
+            PopulatePlayerList()
+            if not isTracking then
+                trackedPlayer = nil
+            end
+        end
+
+        if isTracking then
+            DrawTrackMenu()
+
+            -- Handle menu navigation
+            local selectedIndex = math.floor((GetControlNormal(0, 2) * 20) + 1)
+            if selectedIndex > 0 and selectedIndex <= #playerList then
+                if IsControlJustPressed(0, 18) then -- ENTER key
+                    local selectedPlayer = playerList[selectedIndex]
+                    TrackPlayer(selectedPlayer.id)
+                end
+            end
+        end
+    end
+end)
